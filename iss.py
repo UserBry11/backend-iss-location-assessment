@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import requests
+import time
 import json
 import turtle
 
@@ -7,12 +8,6 @@ __author__ = 'Bryan'
 
 
 def get_astronauts():
-    """ Obtain list of astronauts currently in space
-
-    Print their full names, the spacecraft they are currently on board,
-    and the total number of astronauts in space.
-    """
-
     response = requests.get("http://api.open-notify.org/astros.json")
 
     data_dict = json.loads(response.content)
@@ -22,55 +17,70 @@ def get_astronauts():
 
 
 def get_coordinates():
-    """
-    Using another public API, obtain the current geographic coordinates
-    (lat/lon) of the space station, along with a timestamp.
-    """
 
     response = requests.get("http://api.open-notify.org/iss-now.json")
     data = response.content
     geo_coordinates = json.loads(data)
     print(geo_coordinates["iss_position"],
           "Time Stamp: {}\n".format(geo_coordinates["timestamp"]))
+    return geo_coordinates
 
 
-def part_C():
+def indy_locate():
+    payload = {'lat': '39.7', 'lon': '-86.1'}
+    r = requests.get("http://api.open-notify.org/iss-pass.json",
+                     params=payload)
+    # print(type(r.text))
+    indy_content = json.loads(r.content)
+
+    rise_time = indy_content["response"][0]["risetime"]
+    our_time = time.ctime(rise_time)
+    print("\nNext time ISS will be over Indianapolis: {}".format(our_time))
+    indy_location = [our_time, 39.7, -86.1]
+
+    return indy_location
+
+
+def create_Turtle():
     window = turtle.Screen()
+
     window.title("poop")
     turtle.bgpic("map.gif")
     turtle.setup(width=0.5, height=0.4)
+    turtle.penup()
+
     turtle.setpos(-50, 150)
+    turtle.color("yellow")
     turtle.write("International Space Stations Current Location!",
                  font=(40, "bold"))
     turtle.penup()
 
-    apple = turtle.Turtle()
-    apple.screen.register_shape("iss.gif")
-    apple.screen.getshapes()
-    apple.shape("iss.gif")
+    iss = turtle.Turtle()
+    iss.register_shape("iss.gif")
+    iss.getshapes()
+    iss.shape("iss.gif")
+    iss.penup()
 
-    """
-    Examples:
-    >>> setup (width=200, height=200, startx=0, starty=0)
+    iss_coord = get_coordinates()["iss_position"]
+    latitude = iss_coord["latitude"]
+    longitude = iss_coord["longitude"]
+    # latitude = y, longitude = x, to make it work
+    iss.setpos(iss_coord[2], iss_coord[1])
 
-    sets window to 200x200 pixels, in upper left of screen
+    indy_location = indy_locate()
+    dot = turtle.Turtle()
+    dot.shape("circle")
+    dot.color("yellow")
+    dot.setpos(longitude, latitude)
+    my_string = "{}".format(indy_location[0])
+    dot.write(my_string, font=("Arial", "bold"))
 
-    >>> setup(width=.75, height=0.5, startx=None, starty=None)
-
-    sets window to 75% of screen by 50% of screen and centers
-
-        >>> setworldcoordinates(-10,-0.5,50,1.5)
-    >>> for _ in range(36):
-    ...     left(10)
-    ...     forward(0.5)
-
-    """
+    turtle.exitonClick()
 
 
 def main():
-    # get_astronauts()
-    # get_coordinates()
-    part_C()
+    get_astronauts()
+    create_Turtle()
 
 
 if __name__ == '__main__':
